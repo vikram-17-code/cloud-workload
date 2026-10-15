@@ -1,0 +1,56 @@
+services:
+  # Node 01: Cloud Control Plane & Ingress Gateway (Web Dashboard)
+  cloud-gateway-node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloud_gateway_node
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - PYTHONUNBUFFERED=1
+      - WORKER_A_URL=http://cloud-worker-node-01:5001
+      - WORKER_B_URL=http://cloud-worker-node-02:5002
+    depends_on:
+      - cloud-worker-node-01
+      - cloud-worker-node-02
+    networks:
+      - cloud-net
+
+  # Node 02: Distributed Compute Worker Node A (hyp02)
+  cloud-worker-node-01:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloud_worker_node_01
+    command: ["python", "workload_app.py", "5001"]
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+    environment:
+      - PORT=5001
+      - PYTHONUNBUFFERED=1
+    networks:
+      - cloud-net
+
+  # Node 03: Distributed Compute Worker Node B (hyp03)
+  cloud-worker-node-02:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloud_worker_node_02
+    command: ["python", "workload_app.py", "5002"]
+    ports:
+      - "5002:5002"
+    restart: unless-stopped
+    environment:
+      - PORT=5002
+      - PYTHONUNBUFFERED=1
+    networks:
+      - cloud-net
+
+networks:
+  cloud-net:
+    driver: bridge
